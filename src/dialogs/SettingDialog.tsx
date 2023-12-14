@@ -4,6 +4,7 @@ import {
     Alert,
     Chip,
     Dialog,
+    Divider,
     DialogContent,
     DialogActions,
     DialogTitle,
@@ -159,16 +160,16 @@ export default function SettingDialog(props: Props) {
     const handleChange = (event: React.SyntheticEvent, newValue: number) => {
       setValue(newValue)
     }
-    const [age, setAge] = React.useState('');
+    const [model, setModel] = React.useState<number>(10);
 
-    const handleChangeage = (event: { target: { value: React.SetStateAction<string> } }) => {
-      setAge(event.target.value);
+    const handleChangeModel = (event: { target: { value: unknown } }) => {
+      setModel(event.target.value as number);
     };
     return (
         <Dialog open={props.open} onClose={onCancel} fullWidth>
             <DialogTitle>{t('settings')}</DialogTitle>
             <DialogContent>
-                <Tabs value={value} onChange={handleChange} aria-label="lab API tabs example">
+                <Tabs value={value} onChange={handleChange} aria-label="lab API tabs example" centered>
                     <Tab icon={<SmartToyOutlinedIcon />} label="Model" {...a11yProps(0)} />
                     <Tab icon={<DisplaySettingsOutlinedIcon />} label="Display" {...a11yProps(1)} />
                     <Tab icon={<ChatOutlinedIcon />} label="Chat" {...a11yProps(2)} />
@@ -180,26 +181,261 @@ export default function SettingDialog(props: Props) {
                         <Select
                             labelId="demo-simple-select-label"
                             id="demo-simple-select"
-                            value={age}
+                            value={model}
                             label="Age"
-                            onChange={handleChangeage}
+                            onChange={handleChangeModel}
                         >
-                            <MenuItem value={10}>Ten</MenuItem>
-                            <MenuItem value={20}>Twenty</MenuItem>
-                            <MenuItem value={30}>Thirty</MenuItem>
+                            <MenuItem value={10}>OpenAI</MenuItem>
+                            <MenuItem value={20}>ChatGLM-6B</MenuItem>
+                            <MenuItem value={30}>qianwen</MenuItem>
                         </Select>
                     </FormControl>
-                    <TextField
-                        autoFocus
-                        margin="dense"
-                        label={t('openai api key')}
-                        type="password"
-                        fullWidth
-                        variant="outlined"
-                        value={settingsEdit.openaiKey}
-                        onChange={(e) => setSettingsEdit({ ...settingsEdit, openaiKey: e.target.value.trim() })}
-                    />
 
+                    <Divider />
+
+                    {/* Conditional rendering based on the selected model */}
+                    {model === 10 && (
+                        // Render content specific to OpenAI
+                        <>
+                            <TextField
+                                autoFocus
+                                margin="dense"
+                                label={t('openai api key')}
+                                type="password"
+                                fullWidth
+                                variant="outlined"
+                                value={settingsEdit.openaiKey}
+                                onChange={(e) => setSettingsEdit({ ...settingsEdit, openaiKey: e.target.value.trim() })}
+                            />
+                            <TextField
+                                margin="dense"
+                                label={t('api host')}
+                                type="text"
+                                fullWidth
+                                variant="outlined"
+                                value={settingsEdit.apiHost}
+                                onChange={(e) => setSettingsEdit({ ...settingsEdit, apiHost: e.target.value.trim() })}
+                            />
+
+                            {!settingsEdit.apiHost.match(/^(https?:\/\/)?api.openai.com(:\d+)?$/) && (
+                                <Alert severity="warning">
+                                    {t('proxy warning', { apiHost: settingsEdit.apiHost })}
+                                    <Button
+                                        onClick={() =>
+                                            setSettingsEdit({ ...settingsEdit, apiHost: getDefaultSettings().apiHost })
+                                        }
+                                    >
+                                        {t('reset')}
+                                    </Button>
+                                </Alert>
+                            )}
+                            {settingsEdit.apiHost.startsWith('http://') && (
+                                <Alert severity="warning">
+                                    {<Trans i18nKey="protocol warning" components={{ bold: <strong /> }} />}
+                                </Alert>
+                            )}
+                            {!settingsEdit.apiHost.startsWith('http') && (
+                                <Alert severity="error">
+                                    {<Trans i18nKey="protocol error" components={{ bold: <strong /> }} />}
+                                </Alert>
+                            )}
+                            <Accordion>
+                                <AccordionSummary aria-controls="panel1a-content">
+                                    <Typography>
+                                        {t('model')} & {t('token')}{' '}
+                                    </Typography>
+                                </AccordionSummary>
+                                <AccordionDetails>
+                                    <Alert severity="warning">
+                                        {t('settings modify warning')}
+                                        {t('please make sure you know what you are doing.')}
+                                        {t('click here to')}
+                                        <Button
+                                            onClick={() =>
+                                                setSettingsEdit({
+                                                    ...settingsEdit,
+                                                    model: getDefaultSettings().model,
+                                                    maxContextSize: getDefaultSettings().maxContextSize,
+                                                    maxTokens: getDefaultSettings().maxTokens,
+                                                    showModelName: getDefaultSettings().showModelName,
+                                                    temperature: getDefaultSettings().temperature,
+                                                })
+                                            }
+                                        >
+                                            {t('reset')}
+                                        </Button>
+                                        {t('to default values.')}
+                                    </Alert>
+
+                                    <FormControl fullWidth variant="outlined" margin="dense">
+                                        <InputLabel htmlFor="model-select">{t('model')}</InputLabel>
+                                        <Select
+                                            label="Model"
+                                            id="model-select"
+                                            value={settingsEdit.model}
+                                            onChange={(e) => setSettingsEdit({ ...settingsEdit, model: e.target.value })}
+                                        >
+                                            {models.map((model) => (
+                                                <MenuItem key={model} value={model}>
+                                                    {model}
+                                                </MenuItem>
+                                            ))}
+                                        </Select>
+                                    </FormControl>
+
+                                    <Box sx={{ marginTop: 3, marginBottom: 1 }}>
+                                        <Typography id="discrete-slider" gutterBottom>
+                                            {t('temperature')}
+                                        </Typography>
+                                    </Box>
+                                    <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto' }}>
+                                        <Box sx={{ width: '100%' }}>
+                                            <Slider
+                                                value={settingsEdit.temperature}
+                                                onChange={handleTemperatureChange}
+                                                aria-labelledby="discrete-slider"
+                                                valueLabelDisplay="auto"
+                                                defaultValue={settingsEdit.temperature}
+                                                step={0.1}
+                                                min={0}
+                                                max={1}
+                                                marks={[
+                                                    {
+                                                        value: 0.2,
+                                                        label: (
+                                                            <Chip
+                                                                size="small"
+                                                                icon={<PlaylistAddCheckCircleIcon />}
+                                                                label={t('meticulous')}
+                                                            />
+                                                        ),
+                                                    },
+                                                    {
+                                                        value: 0.8,
+                                                        label: (
+                                                            <Chip
+                                                                size="small"
+                                                                icon={<LightbulbCircleIcon />}
+                                                                label={t('creative')}
+                                                            />
+                                                        ),
+                                                    },
+                                                ]}
+                                            />
+                                        </Box>
+                                    </Box>
+
+                                    <Box sx={{ marginTop: 3, marginBottom: -1 }}>
+                                        <Typography id="discrete-slider" gutterBottom>
+                                            {t('max tokens in context')}
+                                        </Typography>
+                                    </Box>
+                                    <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto' }}>
+                                        <Box sx={{ width: '92%' }}>
+                                            <Slider
+                                                value={
+                                                    settingsEdit.maxContextSize === 'inf'
+                                                        ? 8192
+                                                        : Number(settingsEdit.maxContextSize)
+                                                }
+                                                onChange={handleMaxContextSliderChange}
+                                                aria-labelledby="discrete-slider"
+                                                valueLabelDisplay="auto"
+                                                defaultValue={
+                                                    settingsEdit.maxContextSize === 'inf'
+                                                        ? 8192
+                                                        : Number(settingsEdit.maxContextSize)
+                                                }
+                                                step={64}
+                                                min={64}
+                                                max={8192}
+                                            />
+                                        </Box>
+                                        <TextField
+                                            sx={{ marginLeft: 2 }}
+                                            value={settingsEdit.maxContextSize}
+                                            onChange={handleMaxContextInputChange}
+                                            type="text"
+                                            size="small"
+                                            variant="outlined"
+                                        />
+                                    </Box>
+
+                                    <Box sx={{ marginTop: 3, marginBottom: -1 }}>
+                                        <Typography id="discrete-slider" gutterBottom>
+                                            {t('max tokens per reply')}
+                                        </Typography>
+                                    </Box>
+                                    <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto' }}>
+                                        <Box sx={{ width: '92%' }}>
+                                            <Slider
+                                                value={settingsEdit.maxTokens === 'inf' ? 8192 : Number(settingsEdit.maxTokens)}
+                                                defaultValue={
+                                                    settingsEdit.maxTokens === 'inf' ? 8192 : Number(settingsEdit.maxTokens)
+                                                }
+                                                onChange={handleRepliesTokensSliderChange}
+                                                aria-labelledby="discrete-slider"
+                                                valueLabelDisplay="auto"
+                                                step={64}
+                                                min={64}
+                                                max={8192}
+                                            />
+                                        </Box>
+                                        <TextField
+                                            sx={{ marginLeft: 2 }}
+                                            value={settingsEdit.maxTokens}
+                                            onChange={handleRepliesTokensInputChange}
+                                            type="text"
+                                            size="small"
+                                            variant="outlined"
+                                        />
+                                    </Box>
+
+                                    <FormGroup>
+                                        <FormControlLabel
+                                            control={<Switch />}
+                                            label={t('show model name')}
+                                            checked={settingsEdit.showModelName}
+                                            onChange={(e, checked) => setSettingsEdit({ ...settingsEdit, showModelName: checked })}
+                                        />
+                                    </FormGroup>
+                                </AccordionDetails>
+                            </Accordion>
+                        </>
+
+                        // <AccordionSummary aria-controls="panel1a-content">
+                        //     <Typography>{t('proxy')}</Typography>
+                        // </AccordionSummary>
+                    )}
+                    {model === 20 && (
+                        // Render content specific to ChatGLM-6B
+                        // Add the content for ChatGLM-6B
+                        <TextField
+                            autoFocus
+                            margin="dense"
+                            label={t('ChatGLM-6B URL')}
+                            type="url"
+                            fullWidth
+                            variant="outlined"
+                            value={settingsEdit.openaiKey}
+                            placeholder="http://localhost:8000"
+                            onChange={(e) => setSettingsEdit({ ...settingsEdit, openaiKey: e.target.value.trim() })}
+                        />
+                    )}
+                    {model === 30 && (
+                        // Render content specific to qianwen
+                        // Add the content for qianwen
+                        <TextField
+                            autoFocus
+                            margin="dense"
+                            label={t('qianwen')}
+                            type="password"
+                            fullWidth
+                            variant="outlined"
+                            value={settingsEdit.openaiKey}
+                            onChange={(e) => setSettingsEdit({ ...settingsEdit, openaiKey: e.target.value.trim() })}
+                        />
+                    )}
                 </CustomTabPanel>
                 <CustomTabPanel value={value} index={1}>
                     <FormControl fullWidth variant="outlined" margin="dense">
@@ -273,206 +509,206 @@ export default function SettingDialog(props: Props) {
                 </CustomTabPanel>
                 <CustomTabPanel value={value} index={3}>
                 <Accordion>
-                        <AccordionSummary aria-controls="panel1a-content">
-                            <Typography>{t('proxy')}</Typography>
-                        </AccordionSummary>
-                        <AccordionDetails>
-                            <TextField
-                                margin="dense"
-                                label={t('api host')}
-                                type="text"
-                                fullWidth
-                                variant="outlined"
-                                value={settingsEdit.apiHost}
-                                onChange={(e) => setSettingsEdit({ ...settingsEdit, apiHost: e.target.value.trim() })}
-                            />
+                    <AccordionSummary aria-controls="panel1a-content">
+                        <Typography>{t('proxy')}</Typography>
+                    </AccordionSummary>
+                    <AccordionDetails>
+                        <TextField
+                            margin="dense"
+                            label={t('api host')}
+                            type="text"
+                            fullWidth
+                            variant="outlined"
+                            value={settingsEdit.apiHost}
+                            onChange={(e) => setSettingsEdit({ ...settingsEdit, apiHost: e.target.value.trim() })}
+                        />
 
-                            {!settingsEdit.apiHost.match(/^(https?:\/\/)?api.openai.com(:\d+)?$/) && (
-                                <Alert severity="warning">
-                                    {t('proxy warning', { apiHost: settingsEdit.apiHost })}
-                                    <Button
-                                        onClick={() =>
-                                            setSettingsEdit({ ...settingsEdit, apiHost: getDefaultSettings().apiHost })
-                                        }
-                                    >
-                                        {t('reset')}
-                                    </Button>
-                                </Alert>
-                            )}
-                            {settingsEdit.apiHost.startsWith('http://') && (
-                                <Alert severity="warning">
-                                    {<Trans i18nKey="protocol warning" components={{ bold: <strong /> }} />}
-                                </Alert>
-                            )}
-                            {!settingsEdit.apiHost.startsWith('http') && (
-                                <Alert severity="error">
-                                    {<Trans i18nKey="protocol error" components={{ bold: <strong /> }} />}
-                                </Alert>
-                            )}
-                        </AccordionDetails>
-                    </Accordion>
-                    <Accordion>
-                        <AccordionSummary aria-controls="panel1a-content">
-                            <Typography>
-                                {t('model')} & {t('token')}{' '}
-                            </Typography>
-                        </AccordionSummary>
-                        <AccordionDetails>
+                        {!settingsEdit.apiHost.match(/^(https?:\/\/)?api.openai.com(:\d+)?$/) && (
                             <Alert severity="warning">
-                                {t('settings modify warning')}
-                                {t('please make sure you know what you are doing.')}
-                                {t('click here to')}
+                                {t('proxy warning', { apiHost: settingsEdit.apiHost })}
                                 <Button
                                     onClick={() =>
-                                        setSettingsEdit({
-                                            ...settingsEdit,
-                                            model: getDefaultSettings().model,
-                                            maxContextSize: getDefaultSettings().maxContextSize,
-                                            maxTokens: getDefaultSettings().maxTokens,
-                                            showModelName: getDefaultSettings().showModelName,
-                                            temperature: getDefaultSettings().temperature,
-                                        })
+                                        setSettingsEdit({ ...settingsEdit, apiHost: getDefaultSettings().apiHost })
                                     }
                                 >
                                     {t('reset')}
                                 </Button>
-                                {t('to default values.')}
                             </Alert>
+                        )}
+                        {settingsEdit.apiHost.startsWith('http://') && (
+                            <Alert severity="warning">
+                                {<Trans i18nKey="protocol warning" components={{ bold: <strong /> }} />}
+                            </Alert>
+                        )}
+                        {!settingsEdit.apiHost.startsWith('http') && (
+                            <Alert severity="error">
+                                {<Trans i18nKey="protocol error" components={{ bold: <strong /> }} />}
+                            </Alert>
+                        )}
+                    </AccordionDetails>
+                </Accordion>
+                <Accordion>
+                    <AccordionSummary aria-controls="panel1a-content">
+                        <Typography>
+                            {t('model')} & {t('token')}{' '}
+                        </Typography>
+                    </AccordionSummary>
+                    <AccordionDetails>
+                        <Alert severity="warning">
+                            {t('settings modify warning')}
+                            {t('please make sure you know what you are doing.')}
+                            {t('click here to')}
+                            <Button
+                                onClick={() =>
+                                    setSettingsEdit({
+                                        ...settingsEdit,
+                                        model: getDefaultSettings().model,
+                                        maxContextSize: getDefaultSettings().maxContextSize,
+                                        maxTokens: getDefaultSettings().maxTokens,
+                                        showModelName: getDefaultSettings().showModelName,
+                                        temperature: getDefaultSettings().temperature,
+                                    })
+                                }
+                            >
+                                {t('reset')}
+                            </Button>
+                            {t('to default values.')}
+                        </Alert>
 
-                            <FormControl fullWidth variant="outlined" margin="dense">
-                                <InputLabel htmlFor="model-select">{t('model')}</InputLabel>
-                                <Select
-                                    label="Model"
-                                    id="model-select"
-                                    value={settingsEdit.model}
-                                    onChange={(e) => setSettingsEdit({ ...settingsEdit, model: e.target.value })}
-                                >
-                                    {models.map((model) => (
-                                        <MenuItem key={model} value={model}>
-                                            {model}
-                                        </MenuItem>
-                                    ))}
-                                </Select>
-                            </FormControl>
+                        <FormControl fullWidth variant="outlined" margin="dense">
+                            <InputLabel htmlFor="model-select">{t('model')}</InputLabel>
+                            <Select
+                                label="Model"
+                                id="model-select"
+                                value={settingsEdit.model}
+                                onChange={(e) => setSettingsEdit({ ...settingsEdit, model: e.target.value })}
+                            >
+                                {models.map((model) => (
+                                    <MenuItem key={model} value={model}>
+                                        {model}
+                                    </MenuItem>
+                                ))}
+                            </Select>
+                        </FormControl>
 
-                            <Box sx={{ marginTop: 3, marginBottom: 1 }}>
-                                <Typography id="discrete-slider" gutterBottom>
-                                    {t('temperature')}
-                                </Typography>
-                            </Box>
-                            <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto' }}>
-                                <Box sx={{ width: '100%' }}>
-                                    <Slider
-                                        value={settingsEdit.temperature}
-                                        onChange={handleTemperatureChange}
-                                        aria-labelledby="discrete-slider"
-                                        valueLabelDisplay="auto"
-                                        defaultValue={settingsEdit.temperature}
-                                        step={0.1}
-                                        min={0}
-                                        max={1}
-                                        marks={[
-                                            {
-                                                value: 0.2,
-                                                label: (
-                                                    <Chip
-                                                        size="small"
-                                                        icon={<PlaylistAddCheckCircleIcon />}
-                                                        label={t('meticulous')}
-                                                    />
-                                                ),
-                                            },
-                                            {
-                                                value: 0.8,
-                                                label: (
-                                                    <Chip
-                                                        size="small"
-                                                        icon={<LightbulbCircleIcon />}
-                                                        label={t('creative')}
-                                                    />
-                                                ),
-                                            },
-                                        ]}
-                                    />
-                                </Box>
-                            </Box>
-
-                            <Box sx={{ marginTop: 3, marginBottom: -1 }}>
-                                <Typography id="discrete-slider" gutterBottom>
-                                    {t('max tokens in context')}
-                                </Typography>
-                            </Box>
-                            <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto' }}>
-                                <Box sx={{ width: '92%' }}>
-                                    <Slider
-                                        value={
-                                            settingsEdit.maxContextSize === 'inf'
-                                                ? 8192
-                                                : Number(settingsEdit.maxContextSize)
-                                        }
-                                        onChange={handleMaxContextSliderChange}
-                                        aria-labelledby="discrete-slider"
-                                        valueLabelDisplay="auto"
-                                        defaultValue={
-                                            settingsEdit.maxContextSize === 'inf'
-                                                ? 8192
-                                                : Number(settingsEdit.maxContextSize)
-                                        }
-                                        step={64}
-                                        min={64}
-                                        max={8192}
-                                    />
-                                </Box>
-                                <TextField
-                                    sx={{ marginLeft: 2 }}
-                                    value={settingsEdit.maxContextSize}
-                                    onChange={handleMaxContextInputChange}
-                                    type="text"
-                                    size="small"
-                                    variant="outlined"
+                        <Box sx={{ marginTop: 3, marginBottom: 1 }}>
+                            <Typography id="discrete-slider" gutterBottom>
+                                {t('temperature')}
+                            </Typography>
+                        </Box>
+                        <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto' }}>
+                            <Box sx={{ width: '100%' }}>
+                                <Slider
+                                    value={settingsEdit.temperature}
+                                    onChange={handleTemperatureChange}
+                                    aria-labelledby="discrete-slider"
+                                    valueLabelDisplay="auto"
+                                    defaultValue={settingsEdit.temperature}
+                                    step={0.1}
+                                    min={0}
+                                    max={1}
+                                    marks={[
+                                        {
+                                            value: 0.2,
+                                            label: (
+                                                <Chip
+                                                    size="small"
+                                                    icon={<PlaylistAddCheckCircleIcon />}
+                                                    label={t('meticulous')}
+                                                />
+                                            ),
+                                        },
+                                        {
+                                            value: 0.8,
+                                            label: (
+                                                <Chip
+                                                    size="small"
+                                                    icon={<LightbulbCircleIcon />}
+                                                    label={t('creative')}
+                                                />
+                                            ),
+                                        },
+                                    ]}
                                 />
                             </Box>
+                        </Box>
 
-                            <Box sx={{ marginTop: 3, marginBottom: -1 }}>
-                                <Typography id="discrete-slider" gutterBottom>
-                                    {t('max tokens per reply')}
-                                </Typography>
-                            </Box>
-                            <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto' }}>
-                                <Box sx={{ width: '92%' }}>
-                                    <Slider
-                                        value={settingsEdit.maxTokens === 'inf' ? 8192 : Number(settingsEdit.maxTokens)}
-                                        defaultValue={
-                                            settingsEdit.maxTokens === 'inf' ? 8192 : Number(settingsEdit.maxTokens)
-                                        }
-                                        onChange={handleRepliesTokensSliderChange}
-                                        aria-labelledby="discrete-slider"
-                                        valueLabelDisplay="auto"
-                                        step={64}
-                                        min={64}
-                                        max={8192}
-                                    />
-                                </Box>
-                                <TextField
-                                    sx={{ marginLeft: 2 }}
-                                    value={settingsEdit.maxTokens}
-                                    onChange={handleRepliesTokensInputChange}
-                                    type="text"
-                                    size="small"
-                                    variant="outlined"
+                        <Box sx={{ marginTop: 3, marginBottom: -1 }}>
+                            <Typography id="discrete-slider" gutterBottom>
+                                {t('max tokens in context')}
+                            </Typography>
+                        </Box>
+                        <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto' }}>
+                            <Box sx={{ width: '92%' }}>
+                                <Slider
+                                    value={
+                                        settingsEdit.maxContextSize === 'inf'
+                                            ? 8192
+                                            : Number(settingsEdit.maxContextSize)
+                                    }
+                                    onChange={handleMaxContextSliderChange}
+                                    aria-labelledby="discrete-slider"
+                                    valueLabelDisplay="auto"
+                                    defaultValue={
+                                        settingsEdit.maxContextSize === 'inf'
+                                            ? 8192
+                                            : Number(settingsEdit.maxContextSize)
+                                    }
+                                    step={64}
+                                    min={64}
+                                    max={8192}
                                 />
                             </Box>
+                            <TextField
+                                sx={{ marginLeft: 2 }}
+                                value={settingsEdit.maxContextSize}
+                                onChange={handleMaxContextInputChange}
+                                type="text"
+                                size="small"
+                                variant="outlined"
+                            />
+                        </Box>
 
-                            <FormGroup>
-                                <FormControlLabel
-                                    control={<Switch />}
-                                    label={t('show model name')}
-                                    checked={settingsEdit.showModelName}
-                                    onChange={(e, checked) => setSettingsEdit({ ...settingsEdit, showModelName: checked })}
+                        <Box sx={{ marginTop: 3, marginBottom: -1 }}>
+                            <Typography id="discrete-slider" gutterBottom>
+                                {t('max tokens per reply')}
+                            </Typography>
+                        </Box>
+                        <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto' }}>
+                            <Box sx={{ width: '92%' }}>
+                                <Slider
+                                    value={settingsEdit.maxTokens === 'inf' ? 8192 : Number(settingsEdit.maxTokens)}
+                                    defaultValue={
+                                        settingsEdit.maxTokens === 'inf' ? 8192 : Number(settingsEdit.maxTokens)
+                                    }
+                                    onChange={handleRepliesTokensSliderChange}
+                                    aria-labelledby="discrete-slider"
+                                    valueLabelDisplay="auto"
+                                    step={64}
+                                    min={64}
+                                    max={8192}
                                 />
-                            </FormGroup>
-                        </AccordionDetails>
-                    </Accordion>
+                            </Box>
+                            <TextField
+                                sx={{ marginLeft: 2 }}
+                                value={settingsEdit.maxTokens}
+                                onChange={handleRepliesTokensInputChange}
+                                type="text"
+                                size="small"
+                                variant="outlined"
+                            />
+                        </Box>
+
+                        <FormGroup>
+                            <FormControlLabel
+                                control={<Switch />}
+                                label={t('show model name')}
+                                checked={settingsEdit.showModelName}
+                                onChange={(e, checked) => setSettingsEdit({ ...settingsEdit, showModelName: checked })}
+                            />
+                        </FormGroup>
+                    </AccordionDetails>
+                </Accordion>
                 </CustomTabPanel>
             </DialogContent>
             <DialogActions>
