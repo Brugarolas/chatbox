@@ -392,13 +392,13 @@ function Main() {
                                 <img
                                     src={icon}
                                     style={{
-                                        width: '35px',
-                                        height: '35px',
-                                        marginRight: '5px',
+                                        width: '136px',
+                                        height: '87px',
+                                        marginRight: '4px',
                                     }}
                                 />
                                 <Typography variant="h5" color="inherit" component="div" style={{ fontSize: '26px' }}>
-                                    Chatbox
+                                    {/* Chat */}
                                 </Typography>
                             </Toolbar>
 
@@ -482,7 +482,7 @@ function Main() {
                                     </Typography>
                                 </MenuItem>
 
-                                <MenuItem onClick={() => setOpenAboutDialog(true)}>
+                                {/* <MenuItem onClick={() => setOpenAboutDialog(true)}>
                                     <ListItemIcon>
                                         <IconButton>
                                             <InfoOutlinedIcon fontSize="small" />
@@ -500,7 +500,7 @@ function Main() {
                                             </Typography>
                                         </Badge>
                                     </ListItemText>
-                                </MenuItem>
+                                </MenuItem> */}
                             </MenuList>
                         </Stack>
                         <Box
@@ -539,8 +539,8 @@ function Main() {
                                     <img
                                         src={icon}
                                         style={{
-                                            width: '30px',
-                                            height: '30px',
+                                            width: '50px',
+                                            height: '50px',
                                         }}
                                     />
                                 ) : (
@@ -567,7 +567,7 @@ function Main() {
                                     {store.currentSession.name}
                                 </span>
                             </Typography>
-                            <SponsorChip sessionId={store.currentSession.id} />
+                            {/* <SponsorChip sessionId={store.currentSession.id} /> */}
                             <IconButton
                                 edge="start"
                                 color="inherit"
