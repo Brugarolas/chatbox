@@ -181,20 +181,24 @@ export default function SettingDialog(props: Props) {
                         <Select
                             labelId="demo-simple-select-label"
                             id="demo-simple-select"
-                            value={model}
+                            // value={model}
+                            value={settingsEdit.model}
                             label="Age"
-                            onChange={handleChangeModel}
+                            // onChange={handleChangeModel}
+                            onChange={(e) => {
+                                setSettingsEdit({ ...settingsEdit, model: e.target.value as string });
+                            }}
                         >
-                            <MenuItem value={10}>OpenAI</MenuItem>
-                            <MenuItem value={20}>ChatGLM-6B</MenuItem>
-                            <MenuItem value={30}>qianwen</MenuItem>
+                            <MenuItem value={'OpenAI'}>OpenAI</MenuItem>
+                            <MenuItem value={'ChatGLM-6B'}>ChatGLM-6B</MenuItem>
+                            <MenuItem value={'qwen'}>qwen</MenuItem>
                         </Select>
                     </FormControl>
 
                     <Divider />
 
                     {/* Conditional rendering based on the selected model */}
-                    {model === 10 && (
+                    {settingsEdit.model === 'OpenAI' && (
                         // Render content specific to OpenAI
                         <>
                             <TextField
@@ -407,7 +411,7 @@ export default function SettingDialog(props: Props) {
                         //     <Typography>{t('proxy')}</Typography>
                         // </AccordionSummary>
                     )}
-                    {model === 20 && (
+                    {settingsEdit.model === 'ChatGLM-6B' && (
                         // Render content specific to ChatGLM-6B
                         // Add the content for ChatGLM-6B
                         <TextField
@@ -417,23 +421,23 @@ export default function SettingDialog(props: Props) {
                             type="url"
                             fullWidth
                             variant="outlined"
-                            value={settingsEdit.openaiKey}
+                            value={settingsEdit.ChatGLM_url}
                             placeholder="http://localhost:8000"
-                            onChange={(e) => setSettingsEdit({ ...settingsEdit, openaiKey: e.target.value.trim() })}
+                            onChange={(e) => setSettingsEdit({ ...settingsEdit, ChatGLM_url: e.target.value.trim() })}
                         />
                     )}
-                    {model === 30 && (
+                    {settingsEdit.model === 'qwen' && (
                         // Render content specific to qianwen
                         // Add the content for qianwen
                         <TextField
                             autoFocus
                             margin="dense"
-                            label={t('qianwen')}
+                            label={t('qwen')}
                             type="password"
                             fullWidth
                             variant="outlined"
-                            value={settingsEdit.openaiKey}
-                            onChange={(e) => setSettingsEdit({ ...settingsEdit, openaiKey: e.target.value.trim() })}
+                            value={settingsEdit.qwenKey}
+                            onChange={(e) => setSettingsEdit({ ...settingsEdit, qwenKey: e.target.value.trim() })}
                         />
                     )}
                 </CustomTabPanel>
