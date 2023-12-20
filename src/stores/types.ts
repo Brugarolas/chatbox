@@ -39,6 +39,9 @@ export function createSession(name = 'Untitled'): Session {
 }
 
 export interface Settings {
+    qwenKey: string
+    ChatGLM_url: string
+    ChatGLM_Model: string
     openaiKey: string
     apiHost: string
     model: string
