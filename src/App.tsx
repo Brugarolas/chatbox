@@ -147,7 +147,7 @@ function Main() {
         if (!messageListRef.current) {
             return
         }
-        messageListRef.current.addEventListener('wheel', function (e: any) {
+        messageListRef.current.addEventListener('wheel', function () {
             messageScrollRef.current = null
         })
     }, [])
@@ -280,9 +280,9 @@ function Main() {
             await writeTextFile(filePath!, content)
         }
     }
-
     const generate = async (session: Session, promptMsgs: Message[], targetMsg: Message) => {
         messageScrollRef.current = { msgId: targetMsg.id, smooth: false }
+        console.log("285 data:", session, promptMsgs, targetMsg)
         await llm.chat(
             store.settings.openaiKey,
             store.settings.apiHost,
@@ -292,6 +292,7 @@ function Main() {
             store.settings.temperature,
             promptMsgs,
             ({ text, cancel }) => {
+                console.log('Generated Text:', text);
                 for (let i = 0; i < session.messages.length; i++) {
                     if (session.messages[i].id === targetMsg.id) {
                         session.messages[i] = {
@@ -321,6 +322,7 @@ function Main() {
                 store.updateChatSession(session)
             },
         )
+        // console.log('Generated Text:', text)
         for (let i = 0; i < session.messages.length; i++) {
             if (session.messages[i].id === targetMsg.id) {
                 session.messages[i] = {
@@ -330,6 +332,7 @@ function Main() {
                 break
             }
         }
+        console.log('session:', session)
         store.updateChatSession(session)
 
         messageScrollRef.current = null
@@ -624,6 +627,7 @@ function Main() {
                                     refreshMsg={() => {
                                         if (msg.role === 'assistant') {
                                             const promptMsgs = store.currentSession.messages.slice(0, ix)
+                                            console.log("store.currentSession, promptMsgs, msg", store.currentSession, promptMsgs, msg)
                                             generate(store.currentSession, promptMsgs, msg)
                                         } else {
                                             const promptsMsgs = store.currentSession.messages.slice(0, ix + 1)
@@ -680,14 +684,19 @@ function Main() {
                                 quoteCache={quoteCache}
                                 setQuotaCache={setQuoteCache}
                                 onSubmit={async (newUserMsg: Message, needGenerating = true) => {
+                                    // Log the user's message to the console
+                                    console.log('User Message:', newUserMsg)
+                                    console.log("needGenerating", needGenerating)
                                     if (needGenerating) {
                                         const promptsMsgs = [...store.currentSession.messages, newUserMsg]
                                         const newAssistantMsg = createMessage('assistant', '....')
+                                        console.log("newAssistantMsg", newAssistantMsg)
                                         store.currentSession.messages = [
                                             ...store.currentSession.messages,
                                             newUserMsg,
                                             newAssistantMsg,
                                         ]
+                                        console.log("store", store)
                                         store.updateChatSession(store.currentSession)
                                         generate(store.currentSession, promptsMsgs, newAssistantMsg)
                                         messageScrollRef.current = { msgId: newAssistantMsg.id, smooth: true }
@@ -707,6 +716,7 @@ function Main() {
                     open={openSettingDialog}
                     settings={store.settings}
                     save={(settings) => {
+                        console.log("save", settings)
                         store.setSettings(settings)
                         setOpenSettingDialog(false)
                         if (settings.fontSize !== store.settings.fontSize) {
