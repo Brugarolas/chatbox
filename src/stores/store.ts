@@ -13,10 +13,15 @@ export function getDefaultSettings(): Settings {
     return {
         openaiKey: '',
         apiHost: 'https://api.openai.com',
-        model: 'gpt-3.5-turbo',
+        model: 'qwen',
         temperature: 0.7,
         maxContextSize: '4000',
         maxTokens: '2048',
+
+        ChatGLM_url: 'http://localhost:8000',  // ChatGLM默认API主机
+        ChatGLM_Model: 'THUDM/chatglm-6b-int4',  // ChatGLM默认模型
+
+        qwenKey:'sk-c3bf821d3f594e6486b4431247838b76',
         showWordCount: false,
         showTokenCount: false,
         showModelName: false,
@@ -118,7 +123,7 @@ export default function useStore() {
     useEffect(() => {
         readSettings().then((settings) => {
             _setSettings(settings)
-            if (settings.openaiKey === '') {
+            if (settings.openaiKey === '' || settings.qwenKey === '') {
                 setNeedSetting(true)
             }
             i18n.changeLanguage(settings.language).then()
