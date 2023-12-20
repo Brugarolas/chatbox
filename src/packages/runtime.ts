@@ -22,7 +22,7 @@ export const writeStore = async (key: string, value: any) => {
 }
 
 export const readStore = async (key: string): Promise<any | undefined> => {
-    await handleCompatibilityV0_1()
+    // await handleCompatibilityV0_1()
     const value = await store.get(key)
     return value || undefined
 }
